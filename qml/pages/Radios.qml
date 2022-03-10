@@ -70,7 +70,7 @@ Page {
                           "radioLogoImage": f[i].radioLogo?f[i].radioLogo:"../harbour-oldiesradio.png",
                           "radioDescription": f[i].description,
                           "streamInfo": "",
-                          "radioStream": f[i].stream
+                          "radioStream": f[i].stream ? JSON.parse(f[i].stream) : ""
                       })
         }
 
@@ -150,15 +150,16 @@ Page {
                                     text: "Add to favorites"
                                     visible: categoryTitle != "My favorites"
                                     onClicked: {
+                                        var radioStream = JSON.stringify(dataArr[index].radioStream)
                                         var f = {
                                             "categoryTitle": "My favorites",
                                             "radioTitle": dataArr[index].radioTitle,
                                             "radioLogoImage": dataArr[index].radioLogoImage,
                                             "radioDescription": dataArr[index].radioDescription,
                                             "streamInfo": typeof dataArr[index].streamInfo === "object"?"":dataArr[index].streamInfo,
-                                            "radioStream": dataArr[index].radioStream
+                                            "radioStream": radioStream
                                         }
-                                        var res = database.addFavorite(dataArr[index].radioTitle, dataArr[index].radioDescription, dataArr[index].radioStream, dataArr[index].radioLogoImage)
+                                        var res = database.addFavorite(dataArr[index].radioTitle, dataArr[index].radioDescription, radioStream, dataArr[index].radioLogoImage)
                                         console.log("res", res)
                                         if (res) {
                                             var f = database.getFavorites()
@@ -171,7 +172,7 @@ Page {
                                                               "radioLogoImage": f[i].radioLogo?f[i].radioLogo:"../harbour-oldiesradio.png",
                                                               "radioDescription": f[i].description,
                                                               "streamInfo": "",
-                                                              "radioStream": f[i].stream
+                                                              "radioStream": f[i].stream ? JSON.parse(f[i].stream) : ""
                                                           })
                                             }
                                             category.set(0, {"categoryTitle": "My favorites", "dict": JSON.stringify(dict)})
