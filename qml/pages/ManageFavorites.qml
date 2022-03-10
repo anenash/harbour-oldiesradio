@@ -26,7 +26,7 @@ Page {
             favorites.append({
                                  "id": f[i].keyname,
                                  "title": f[i].title,
-                                 "radioLogoImage": "../harbour-oldiesradio.png",
+                                 "radioLogoImage": f[i].radioLogo, //"../harbour-oldiesradio.png",
                                  "description": f[i].description,
                                  "radioStream": f[i].stream
                              })
@@ -74,7 +74,7 @@ Page {
             }
 
             onDone: {
-                if (result == DialogResult.Accepted) {
+                if (result === DialogResult.Accepted) {
                     favorite.id = Qt.md5(streamURL.text)
                     favorite.title = stationTitle.text
                     favorite.description = stationDescription.text

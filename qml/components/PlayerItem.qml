@@ -15,6 +15,9 @@ Item {
     onStreamInfoChanged: {
         artistTitle.text = ""
         songTitle.text = ""
+
+        console.log(streamInfo)
+
         if (streamInfo !== "") {
             updateTrackInfo.start()
         }
@@ -68,7 +71,7 @@ Item {
 
         onStatusChanged: {
             if (status === XmlListModel.Ready) {
-                console.log(status, get(0).artist, get(0).song, get(0).image)
+                console.log(status, get(0))
                 currentRadioLogo.source = get(0).image?get(0).image:radioLogo
                 app.radioLogo = get(0).image?get(0).image:radioLogo
                 artistTitle.text = Utils.replaceEntity(get(0).artist)

@@ -20,6 +20,13 @@ Item {
             console.log("Create the database if it doesn't already exist")
             tx.executeSql('CREATE TABLE IF NOT EXISTS settings(keyname TEXT UNIQUE, value TEXT, textName TEXT)')
             tx.executeSql('CREATE TABLE IF NOT EXISTS favorites(keyname TEXT UNIQUE, title TEXT, description TEXT, stream TEXT)')
+
+            var columnExists = tx.executeSql('PRAGMA table_info(favorites)')
+
+            if(columnExists.rows.length === 4) {
+                    //ALTER TABLE {tableName} ADD COLUMN COLNew {type}
+                    tx.executeSql('ALTER TABLE favorites ADD COLUMN radioLogo TEXT')
+            }
         })
     }
 
@@ -62,16 +69,19 @@ Item {
         return res
     }
 
-    function addFavorite(id, title, description, stream) {
+    function addFavorite(title, description, stream, radioLogo) {
+        var res = false
         // stores favorite to _db
-        console.log('addFavorite()', id, title, description, stream)
+        console.log('addFavorite()', title, description, stream, radioLogo)
         if(!internal._db) { return }
         internal._db.transaction( function(tx) {
-            var result = tx.executeSql('INSERT OR REPLACE INTO favorites VALUES (?,?,?,?);', [id, title, description, stream])
+            var result = tx.executeSql('INSERT OR REPLACE INTO favorites VALUES (?,?,?,?,?);', [title, title, description, stream, radioLogo])
             if(result.rowsAffected === 1) {// use update
                 console.log('record exists, update it', JSON.stringify(result))
+                res = true
             }
         })
+        return res
     }
 
     function getFavorites() {
@@ -90,11 +100,17 @@ Item {
     }
 
     function deleteFavorite(id) {
+        var res = false
         if(!internal._db) { return }
         console.log("id", id)
         internal._db.transaction( function(tx) {
             var result = tx.executeSql('DELETE from favorites WHERE keyname=?', [id])
             console.log("Delete data from the trackData table result\n", JSON.stringify(result))
+            if(result.rowsAffected === 1) {// use update
+                console.log('record exists, delete it', JSON.stringify(result))
+                res = true
+            }
         })
+        return res
     }
 }

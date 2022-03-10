@@ -39,14 +39,6 @@ Page {
                     for (var j in radios) {
                         if (radios[j].streams !== undefined) {
                             var streams = radios[j].streams
-//                            stations.append({
-//                                                "categoryTitle": raw[i].title,
-//                                                "radioTitle": Utils.replaceEntity(radios[j].name),
-//                                                "radioLogoImage": radios[j].logo,
-//                                                "radioDescription": Utils.replaceEntity(radios[j].description),
-//                                                "streamInfo": radios[j].artwork,
-//                                                "radioStream": streams
-//                                            })
                             dict.push({
                                           "categoryTitle": raw[i].title,
                                           "radioTitle": Utils.replaceEntity(radios[j].name),
@@ -58,7 +50,7 @@ Page {
                         }
                     }
                 }
-//                console.log(JSON.stringify(dict))
+                //                console.log(JSON.stringify(dict))
                 category.append({"categoryTitle": raw[i].title, "dict": JSON.stringify(dict)})
                 dict = []
             }
@@ -66,24 +58,16 @@ Page {
         }
     }
 
-    Component.onCompleted: {
-        database.initDatabase()
+    function fillModel() {
+        category.clear()
         var f = database.getFavorites()
-        console.log("Fav", JSON.stringify(f))
+//        console.log("Fav", JSON.stringify(f))
         var dict = []
-        dict.push({
-                      "categoryTitle": "My favorites",
-                      "radioTitle": "Rádia Anténa Rock",
-                      "radioLogoImage": "http://antenarock.sk/templates/img/antena-live.jpg",
-                      "radioDescription": "Live vysielanie Rádia Anténa Rock",
-                      "streamInfo": "",
-                      "radioStream": "http://stream.antenarock.sk/antena-hi.mp3"
-                  })
         for (var i in f) {
             dict.push({
                           "categoryTitle": "My favorites",
                           "radioTitle": f[i].title,
-                          "radioLogoImage": "../harbour-oldiesradio.png",
+                          "radioLogoImage": f[i].radioLogo?f[i].radioLogo:"../harbour-oldiesradio.png",
                           "radioDescription": f[i].description,
                           "streamInfo": "",
                           "radioStream": f[i].stream
@@ -92,6 +76,11 @@ Page {
 
         category.append({"categoryTitle": "My favorites", "dict": JSON.stringify(dict)})
         Utils.sendHttpRequest("GET", stationsURL, fillData)
+    }
+
+    Component.onCompleted: {
+        database.initDatabase()
+        fillModel()
     }
 
     Drawer {
@@ -120,6 +109,7 @@ Page {
                 }
                 MenuItem {
                     text: "Manage favorires"
+                    visible: false
                     onClicked: {
                         console.log("Clicked option 2")
                         pageStack.push(Qt.resolvedUrl("ManageFavorites.qml"))
@@ -131,30 +121,80 @@ Page {
             header: PageHeader { title: qsTr("Radio categories") }
             model: category
             delegate:  ExpandingSection {
-                        title: categoryTitle
-                        property variant dataArr: JSON.parse(category.get(index).dict)
+                title: categoryTitle
+                property variant dataArr: JSON.parse(category.get(index).dict)
 
-                        content.sourceComponent: SilicaListView {
-                            id: repeater
+                content.sourceComponent: SilicaListView {
+                    id: repeater
 
-                            height: Theme.itemSizeMedium * dataArr.length
-                            spacing: Theme.paddingSmall
-                            clip: true
-                            model: dataArr.length
-                            delegate: StationDelegate {
-                                radioLogo: dataArr[index].radioLogoImage
-                                radioTitle: dataArr[index].radioTitle
-                                radioDescription: dataArr[index].radioDescription
+                    height: Theme.itemSizeMedium * dataArr.length
+                    spacing: Theme.paddingSmall
+                    clip: true
+                    model: dataArr.length
+                    delegate: StationDelegate {
+                        radioLogo: dataArr[index].radioLogoImage
+                        radioTitle: dataArr[index].radioTitle
+                        radioDescription: dataArr[index].radioDescription
 
-                                onClicked: {
-                                    console.log(JSON.stringify(dataArr[index]))
-                                    playerItem.streamsURL = dataArr[index].radioStream
-                                    playerItem.radioTitle = dataArr[index].radioTitle
-                                    playerItem.radioLogo = dataArr[index].radioLogoImage
-                                    playerItem.streamInfo = typeof dataArr[index].streamInfo === "object"?"":dataArr[index].streamInfo
+                        onClicked: {
+                            console.log(JSON.stringify(dataArr[index]))
+                            playerItem.streamsURL = dataArr[index].radioStream
+                            playerItem.radioTitle = dataArr[index].radioTitle
+                            playerItem.radioLogo = dataArr[index].radioLogoImage
+                            playerItem.streamInfo = typeof dataArr[index].streamInfo === "object"?"":dataArr[index].streamInfo
+                        }
+
+                        menu: Component {
+                            ContextMenu {
+                                MenuItem {
+                                    text: "Add to favorites"
+                                    visible: categoryTitle != "My favorites"
+                                    onClicked: {
+                                        var f = {
+                                            "categoryTitle": "My favorites",
+                                            "radioTitle": dataArr[index].radioTitle,
+                                            "radioLogoImage": dataArr[index].radioLogoImage,
+                                            "radioDescription": dataArr[index].radioDescription,
+                                            "streamInfo": typeof dataArr[index].streamInfo === "object"?"":dataArr[index].streamInfo,
+                                            "radioStream": dataArr[index].radioStream
+                                        }
+                                        var res = database.addFavorite(dataArr[index].radioTitle, dataArr[index].radioDescription, dataArr[index].radioStream, dataArr[index].radioLogoImage)
+                                        console.log("res", res)
+                                        if (res) {
+                                            var f = database.getFavorites()
+                                            console.log("Fav", JSON.stringify(f))
+                                            var dict = []
+                                            for (var i in f) {
+                                                dict.push({
+                                                              "categoryTitle": "My favorites",
+                                                              "radioTitle": f[i].title,
+                                                              "radioLogoImage": f[i].radioLogo?f[i].radioLogo:"../harbour-oldiesradio.png",
+                                                              "radioDescription": f[i].description,
+                                                              "streamInfo": "",
+                                                              "radioStream": f[i].stream
+                                                          })
+                                            }
+                                            category.set(0, {"categoryTitle": "My favorites", "dict": JSON.stringify(dict)})
+                                        }
+                                    }
+                                }
+                                MenuItem {
+                                    text: "Remove from favorites"
+                                    visible: categoryTitle == "My favorites"
+                                    onClicked: {
+                                        console.log("Clicked remove from favorite")
+                                        var res = database.deleteFavorite(dataArr[index].radioTitle)
+                                        if(res) {
+                                            dataArr.splice(index, 1)
+                                            category.set(0, {"categoryTitle": "My favorites", "dict": JSON.stringify(dataArr)})
+                                            console.log(JSON.stringify(dataArr))
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
+                }
             }
             spacing: Theme.paddingSmall
             clip: true
